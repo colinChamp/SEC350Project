@@ -1,0 +1,510 @@
+firewall {
+    all-ping enable
+    broadcast-ping disable
+    config-trap disable
+    ipv6-receive-redirects disable
+    ipv6-src-route disable
+    ip-src-route disable
+    log-martians enable
+    name DMZ-to-LAN {
+        default-action drop
+        enable-default-log
+        rule 1 {
+            action accept
+            description "Allow previously established connections"
+            state {
+                established enable
+            }
+        }
+        rule 10 {
+            action accept
+            description "Allow DMZ to send logs to syslog01"
+            destination {
+                address 172.16.200.10
+                port 514
+            }
+            protocol udp
+        }
+        rule 15 {
+            action accept
+            description "Allow ICMP pings to srv01"
+            destination {
+                address 172.16.150.5
+            }
+            protocol icmp
+        }
+        rule 16 {
+            action accept
+            description "Allow ICMP pings to syslog01"
+            destination {
+                address 172.16.200.10
+            }
+            protocol icmp
+        }
+        rule 17 {
+            action accept
+            destination {
+                address 172.16.200.8
+            }
+            protocol icmp
+        }
+        rule 20 {
+            action accept
+            description "Allow ssh communication for nagios"
+            destination {
+                address 172.16.200.8
+                port 22
+            }
+            protocol tcp
+        }
+    }
+    name DMZ-to-VPN {
+        default-action drop
+        enable-default-log
+        rule 1 {
+            action accept
+            description "Allow estabilsted connections"
+            state {
+                established enable
+            }
+        }
+    }
+    name DMZ-to-WAN {
+        default-action drop
+        enable-default-log
+        rule 1 {
+            action accept
+            description "Allow previously established connections"
+            state {
+                established enable
+            }
+        }
+        rule 10 {
+            action accept
+            description "Allow  web01 to connect to Champlain.edu"
+            destination {
+                address 208.115.107.132
+                port 80
+            }
+            protocol tcp
+        }
+        rule 15 {
+            action accept
+            description "Allow WEB01 to update NTP"
+            destination {
+                port 123
+            }
+            protocol udp
+            source {
+                address 172.16.50.5
+            }
+        }
+        rule 20 {
+            action accept
+            description "Allow outbound traffic from Zeek"
+            source {
+                address 172.16.50.4
+            }
+        }
+    }
+    name LAN-to-DMZ {
+        default-action drop
+        enable-default-log
+        rule 1 {
+            action accept
+            description "Allow previously established connections"
+            state {
+                established enable
+            }
+        }
+        rule 10 {
+            action accept
+            description "Allow srv01 to ssh to DMZ"
+            destination {
+                port 22
+            }
+            protocol tcp
+            source {
+                address 172.16.150.5
+            }
+        }
+        rule 11 {
+            action accept
+            description "Allow ssh sessions from MGMT"
+            destination {
+                port 22
+            }
+            protocol tcp
+            source {
+                address 172.16.150.3
+            }
+        }
+        rule 15 {
+            action accept
+            description "Allow LAN to connect to HTTP on DMZ"
+            destination {
+                port 80
+            }
+            protocol tcp
+        }
+        rule 16 {
+            action accept
+            description "Allow LAN to connect to https"
+            destination {
+                port 443
+            }
+            protocol tcp
+        }
+        rule 20 {
+            action accept
+            description "Allow LAN to ICMP ping anywhere on the DMZ"
+            destination {
+                address 172.16.50.0/29
+            }
+            protocol icmp
+        }
+    }
+    name LAN-to-VPN {
+        default-action drop
+        enable-default-log
+        rule 1 {
+            action accept
+            description "Allow estabilsted connections"
+            state {
+                established enable
+            }
+        }
+    }
+    name LAN-to-WAN {
+        default-action drop
+        enable-default-log
+        rule 2 {
+            action accept
+        }
+    }
+    name VPN-to-DMZ {
+        default-action drop
+        enable-default-log
+        rule 10 {
+            action accept
+            description "Allow ssh from VPN"
+            destination {
+                port 22
+            }
+            protocol tcp
+        }
+        rule 15 {
+            action accept
+            description "Allow the VPN zone to connect to the webserver in the DMZ"
+            destination {
+                port 80
+            }
+            protocol tcp
+        }
+    }
+    name VPN-to-LAN {
+        default-action drop
+        enable-default-log
+        rule 10 {
+            action accept
+            description "Allow ssh from VPN"
+            destination {
+                port 22
+            }
+            protocol tcp
+        }
+        rule 15 {
+            action accept
+            description "Allow ssh to connect to the splunk port"
+            destination {
+                port 8000
+            }
+            protocol tcp
+        }
+        rule 20 {
+            action accept
+            description "Allow VPN to collect DNS records"
+            destination {
+                port 53
+            }
+            protocol udp
+        }
+    }
+    name WAN-to-DMZ {
+        default-action drop
+        enable-default-log
+        rule 1 {
+            action accept
+            description "Allow previously established connections"
+            state {
+                established enable
+            }
+        }
+        rule 10 {
+            action accept
+            description "Allow WAN to access web01 via HTTP"
+            destination {
+                address 172.16.50.5
+                port 80
+            }
+            protocol tcp
+        }
+    }
+    name WAN-to-LAN {
+        default-action drop
+        enable-default-log
+        rule 1 {
+            action accept
+            description "Allow previously established connections"
+            state {
+                established enable
+            }
+        }
+        rule 25 {
+            action accept
+            description "Allow rw01 to RDP connect to srv01"
+            destination {
+                address 172.16.150.5
+                port 3389
+            }
+            protocol tcp
+            source {
+                address 10.0.17.144
+            }
+        }
+    }
+    receive-redirects disable
+    send-redirects enable
+    source-validation disable
+    syn-cookies enable
+    twa-hazards-protection disable
+}
+interfaces {
+    ethernet eth0 {
+        address 10.0.17.44/24
+        description SEC350-WAN
+        hw-id 00:50:56:b3:a4:d4
+    }
+    ethernet eth1 {
+        address 172.16.50.2/29
+        description SEC350-DMZ
+        hw-id 00:50:56:b3:ce:c7
+    }
+    ethernet eth2 {
+        address 172.16.150.2/24
+        description SEC350-LAN
+    }
+    loopback lo {
+    }
+    openvpn vtun0 {
+        mode server
+        persistent-tunnel
+        protocol udp
+        server {
+            push-route 172.16.150.0/24
+            subnet 172.16.99.0/24
+        }
+        tls {
+            ca-cert-file /config/auth/cacert.pem
+            cert-file /config/auth/edge01-jared.cert
+            dh-file /config/auth/dh2048.pem
+            key-file /config/auth/edge01-jared.key
+        }
+    }
+}
+nat {
+    destination {
+        rule 10 {
+            description "Port forwarding HTTP traffic from WAN to web01"
+            destination {
+                port 80
+            }
+            inbound-interface eth0
+            protocol tcp
+            translation {
+                address 172.16.50.5
+            }
+        }
+        rule 15 {
+            destination {
+                port 3389
+            }
+            inbound-interface eth0
+            protocol tcp
+            translation {
+                address 172.16.150.5
+            }
+        }
+    }
+    source {
+        rule 10 {
+            description "Masqurade NAT from DMZ to WAN"
+            outbound-interface eth0
+            source {
+                address 172.16.50.0/29
+            }
+            translation {
+                address masquerade
+            }
+        }
+        rule 15 {
+            description "Masqurade NAT from LAN to WAN"
+            outbound-interface eth0
+            source {
+                address 172.16.150.0/24
+            }
+            translation {
+                address masquerade
+            }
+        }
+    }
+}
+protocols {
+    static {
+        route 0.0.0.0/0 {
+            next-hop 10.0.17.2 {
+            }
+        }
+        route 172.16.200.0/28 {
+            next-hop 172.16.150.3 {
+            }
+        }
+    }
+}
+service {
+    dns {
+        forwarding {
+            allow-from 172.16.150.0/24
+            allow-from 172.16.50.0/29
+            listen-address 172.16.50.2
+            listen-address 172.16.150.2
+        }
+    }
+    ssh {
+        listen-address 10.0.17.144
+        listen-address 172.16.150.2
+    }
+}
+system {
+    config-management {
+        commit-revisions 100
+    }
+    console {
+    }
+    host-name edge01-jared
+    login {
+        user jared {
+            authentication {
+                encrypted-password $6$igYpSV0ZwAe5n08O$Ghl3n/A691il0pnyLm7htZzDhnUYHU2l55I4Sq9IQorAoyW2RAt/IGOBJDpEJPD9ZX1OKIGzNf17Frb43tM6./
+                plaintext-password ""
+            }
+            full-name "Jared Whichard"
+        }
+        user vyos {
+            authentication {
+                encrypted-password $6$RuJAacJD7hR.13Wk$huXx9B/AJfGzEoXysyjzVT3tL5rvHyndlQ8d2Hltk17jrNdv5NAaG650M3jBkhIyP35kZErPGFk6Kmgx8TYcQ/
+                plaintext-password ""
+            }
+        }
+    }
+    name-server 10.0.17.2
+    ntp {
+        server 0.pool.ntp.org {
+        }
+        server 1.pool.ntp.org {
+        }
+        server 2.pool.ntp.org {
+        }
+    }
+    syslog {
+        global {
+            facility all {
+                level info
+            }
+            facility protocols {
+                level debug
+            }
+        }
+        host 172.16.200.10 {
+            facility authpriv {
+                level info
+            }
+            facility kern {
+                level debug
+            }
+        }
+    }
+}
+zone-policy {
+    zone DMZ {
+        default-action drop
+        from LAN {
+            firewall {
+                name LAN-to-DMZ
+            }
+        }
+        from VPN {
+            firewall {
+                name VPN-to-DMZ
+            }
+        }
+        from WAN {
+            firewall {
+                name WAN-to-DMZ
+            }
+        }
+        interface eth1
+    }
+    zone LAN {
+        default-action drop
+        from DMZ {
+            firewall {
+                name DMZ-to-LAN
+            }
+        }
+        from VPN {
+            firewall {
+                name VPN-to-LAN
+            }
+        }
+        from WAN {
+            firewall {
+                name WAN-to-LAN
+            }
+        }
+        interface eth2
+    }
+    zone VPN {
+        default-action drop
+        from DMZ {
+            firewall {
+                name DMZ-to-VPN
+            }
+        }
+        from LAN {
+            firewall {
+                name LAN-to-VPN
+            }
+        }
+        interface vtun0
+    }
+    zone WAN {
+        default-action drop
+        from DMZ {
+            firewall {
+                name DMZ-to-WAN
+            }
+        }
+        from LAN {
+            firewall {
+                name LAN-to-WAN
+            }
+        }
+        interface eth0
+    }
+}
+
+
+// Warning: Do not remove the following line.
+// vyos-config-version: "broadcast-relay@1:cluster@1:config-management@1:conntrack@1:conntrack-sync@1:dhcp-relay@2:dhcp-server@5:dhcpv6-server@1:dns-forwarding@3:firewall@5:https@2:interfaces@11:ipoe-server@1:ipsec@5:l2tp@3:lldp@1:mdns@1:nat@5:ntp@1:pppoe-server@3:pptp@2:qos@1:quagga@6:salt@1:snmp@1:ssh@1:sstp@2:system@18:vrrp@2:vyos-accel-ppp@2:wanloadbalance@3:webgui@1:webproxy@2:zone-policy@1"
+// Release version: 1.3-rolling-202007010117
